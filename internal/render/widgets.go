@@ -179,9 +179,9 @@ func (c *cv) ring(cx, cy, radius, stroke, pct float64, col color.NRGBA) {
 func (c *cv) tile(x, y, w, h float64, label, value, sub string, col color.NRGBA) {
 	c.roundedFill(x, y, w, h, 16, colCardHigh)
 
-	c.strMid(label, x+24, y+24, 20, false, colMuted, 0)
-	c.strMid(value, x+24, y+60, 38, true, col, 0)
-	c.strMid(sub, x+24, y+92, 18, false, colMuted, 0)
+	c.strMid(label, x+24, y+20, 20, false, colMuted, 0)
+	c.strMid(value, x+24, y+52, 36, true, col, 0)
+	c.strMid(sub, x+24, y+80, 18, false, colMuted, 0)
 }
 
 func (c *cv) tag(x, y float64, text string, col color.NRGBA) float64 {

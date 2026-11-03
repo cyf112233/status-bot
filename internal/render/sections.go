@@ -67,6 +67,8 @@ func (c *cv) sectionCPU(y float64) float64 {
 		c.strMid(values[i], x, contentY+96+float64(row)*74, 34, true, colStrong, 0)
 	}
 
+	c.hairline(innerX, contentY+212, innerW)
+
 	coreLabel := "各核心负载"
 	if c.snap.CPU.Cores > 8 {
 		coreLabel = fmt.Sprintf("各核心负载 · 显示前 8 / 共 %d 核", c.snap.CPU.Cores)
@@ -91,6 +93,7 @@ func (c *cv) sectionCPU(y float64) float64 {
 	}
 
 	timeTop := gridTop + float64(c.coreRows())*64 + 24
+	c.hairline(innerX, timeTop-16, innerW)
 	items := []struct {
 		label string
 		value float64
@@ -107,8 +110,8 @@ func (c *cv) sectionCPU(y float64) float64 {
 		x := innerX + float64(colIdx)*halfW
 		cy := timeTop + 14 + float64(row)*48
 		c.strMid(item.label, x, cy, 20, false, colMuted, 0)
-		lw := c.measure(item.label, 20, false)
-		c.strMid(fmtPct(item.value), x+lw+14, cy, 24, true, colStrong, 0)
+		rx := x + halfW - 16
+		c.strMid(fmtPct(item.value), rx, cy, 24, true, colStrong, 2)
 	}
 	return y + h + cardGap
 }
@@ -147,6 +150,7 @@ func (c *cv) sectionMemory(y float64) float64 {
 		{"共享", fmtBytes(m.Shmem)},
 		{"已提交", fmtBytes(m.Committed)},
 	}
+	c.hairline(innerX, contentY+180, innerW)
 	gridTop := contentY + 192
 	const cols = 2
 	cellW := innerW / cols
@@ -156,8 +160,7 @@ func (c *cv) sectionMemory(y float64) float64 {
 		x := innerX + float64(colIdx)*cellW
 		cy := gridTop + float64(row)*40 + 20
 		c.strMid(item.label, x, cy, 18, false, colMuted, 0)
-		lw := c.measure(item.label, 18, false)
-		c.strMid(item.value, x+lw+12, cy, 22, false, colSub, 0)
+		c.strMid(item.value, x+cellW-24, cy, 22, false, colSub, 2)
 	}
 	return y + h + cardGap
 }
@@ -250,7 +253,7 @@ func fanText(g sysinfo.GPU) string {
 // ---------- 存储 ----------
 
 func (c *cv) diskHeight() float64 {
-	return 76 + float64(len(c.snap.Disks))*110 + 28
+	return 76 + float64(len(c.snap.Disks))*104 + 28
 }
 
 func (c *cv) sectionDisks(y float64) float64 {
@@ -265,8 +268,8 @@ func (c *cv) sectionDisks(y float64) float64 {
 			pct = float64(d.Used) / float64(d.Total) * 100
 		}
 
-		c.strMid(c.fit(d.Mount, innerW-150, 24, true), innerX, ry+18, 24, true, colText, 0)
-		c.strMid(fmtPct(pct), innerX+innerW, ry+18, 26, true, colStrong, 2)
+		c.strMid(c.fit(d.Mount, innerW-150, 24, true), innerX, ry+16, 24, true, colText, 0)
+		c.strMid(fmtPct(pct), innerX+innerW, ry+16, 26, true, colStrong, 2)
 
 		dev := strings.TrimPrefix(d.Device, "/dev/")
 		if dev == "" || dev == "overlay" {
@@ -278,13 +281,13 @@ func (c *cv) sectionDisks(y float64) float64 {
 			inodePct := float64(d.InodesUsed) / float64(d.Inodes) * 100
 			dev += " · inode " + fmtPct0(inodePct)
 		}
-		c.strMid(c.fit(dev, innerW-200, 18, false), innerX, ry+50, 18, false, colMuted, 0)
-		c.strMid(fmt.Sprintf("%s / %s", fmtBytes(d.Used), fmtBytes(d.Total)), innerX+innerW, ry+50, 18, false, colMuted, 2)
+		c.strMid(c.fit(dev, innerW-200, 18, false), innerX, ry+46, 18, false, colMuted, 0)
+		c.strMid(fmt.Sprintf("%s / %s", fmtBytes(d.Used), fmtBytes(d.Total)), innerX+innerW, ry+46, 18, false, colMuted, 2)
 
-		c.bar(innerX, ry+76, innerW, 14, pct, healthColor(pct))
+		c.bar(innerX, ry+72, innerW, 14, pct, healthColor(pct))
 
 		if i < len(disks)-1 {
-			c.hairline(innerX, ry+110, innerW)
+			c.hairline(innerX, ry+104, innerW)
 		}
 	}
 	return y + h + cardGap
@@ -293,7 +296,7 @@ func (c *cv) sectionDisks(y float64) float64 {
 // ---------- 网络 ----------
 
 func (c *cv) netHeight() float64 {
-	return 76 + float64(len(c.snap.Nets))*110 + 28
+	return 76 + float64(len(c.snap.Nets))*100 + 28
 }
 
 func (c *cv) sectionNets(y float64) float64 {
@@ -305,10 +308,10 @@ func (c *cv) sectionNets(y float64) float64 {
 		ry := contentY + float64(i)*110
 
 		name := c.fit(n.Name, 240, 26, true)
-		c.strMid(name, innerX, ry+18, 26, true, colStrong, 0)
+		c.strMid(name, innerX, ry+16, 26, true, colStrong, 0)
 		nameW := c.measure(name, 26, true)
 		if n.Wireless {
-			c.tag(innerX+nameW+10, ry+18, "WiFi", colSub)
+			c.tag(innerX+nameW+10, ry+16, "WiFi", colSub)
 		}
 
 		addr := strings.Join(n.Addrs, "  ")
@@ -320,13 +323,13 @@ func (c *cv) sectionNets(y float64) float64 {
 			addr = joinNonEmpty(addr, n.SSID, "信号 "+fmtPct0(float64(q)))
 		}
 		addr = c.fit(addr, innerW-280, 20, false)
-		c.strMid(addr, innerX, ry+52, 20, false, colMuted, 0)
+		c.strMid(addr, innerX, ry+50, 20, false, colMuted, 0)
 
-		c.strMid(speedText(n.RxRate, true), innerX+innerW, ry+18, 24, true, colStrong, 2)
-		c.strMid(speedText(n.TxRate, false), innerX+innerW, ry+52, 20, true, colSub, 2)
+		c.strMid(speedText(n.RxRate, true), innerX+innerW, ry+16, 24, true, colStrong, 2)
+		c.strMid(speedText(n.TxRate, false), innerX+innerW, ry+50, 20, true, colSub, 2)
 
 		if i < len(nets)-1 {
-			c.hairline(innerX, ry+110, innerW)
+			c.hairline(innerX, ry+100, innerW)
 		}
 	}
 	return y + h + cardGap
@@ -357,7 +360,7 @@ func speedText(v float64, down bool) string {
 
 // ---------- 网络连接 ----------
 
-func (c *cv) netStatsHeight() float64 { return 406 }
+func (c *cv) netStatsHeight() float64 { return 386 }
 
 func (c *cv) sectionNetStats(y float64) float64 {
 	h := c.netStatsHeight()
@@ -391,10 +394,10 @@ func (c *cv) sectionNetStats(y float64) float64 {
 		dns = strings.Join(st.DNS, ", ")
 	}
 	line1 := c.fit("默认网关 "+gateway+" · DNS "+dns, innerW, 20, false)
-	c.strMid(line1, innerX, contentY+260, 20, false, colSub, 0)
+	c.strMid(line1, innerX, contentY+240, 20, false, colSub, 0)
 
 	line2 := fmt.Sprintf("累计流量 ↓ %s · ↑ %s", fmtBytes(st.RxTotal), fmtBytes(st.TxTotal))
-	c.strMid(line2, innerX, contentY+292, 20, false, colMuted, 0)
+	c.strMid(line2, innerX, contentY+272, 20, false, colMuted, 0)
 	return y + h + cardGap
 }
 
@@ -403,9 +406,9 @@ func (c *cv) sectionNetStats(y float64) float64 {
 func (c *cv) ioHeight() float64 {
 	n := minInt(len(c.snap.IO.Disks), 4)
 	if n == 0 {
-		return 76 + 236 + 28
+		return 320
 	}
-	return 394 + float64(n)*80
+	return 364 + float64(n)*76
 }
 
 func (c *cv) sectionIO(y float64) float64 {
@@ -428,7 +431,7 @@ func (c *cv) sectionIO(y float64) float64 {
 	for i, t := range tiles {
 		row := i / 2
 		colIdx := i % 2
-		c.tile(innerX+float64(colIdx)*(tw+gap), contentY+float64(row)*126, tw, 110, t.label, t.value, t.sub, colStrong)
+		c.tile(innerX+float64(colIdx)*(tw+gap), contentY+float64(row)*116, tw, 100, t.label, t.value, t.sub, colStrong)
 	}
 
 	disks := io.Disks
@@ -436,15 +439,15 @@ func (c *cv) sectionIO(y float64) float64 {
 		disks = disks[:4]
 	}
 	if len(disks) > 0 {
-		c.strMid("设备", innerX, contentY+270, 20, false, colMuted, 0)
-		c.strMid("繁忙", innerX+innerW, contentY+270, 20, false, colMuted, 2)
+		c.strMid("设备", innerX, contentY+240, 20, false, colMuted, 0)
+		c.strMid("繁忙", innerX+innerW, contentY+240, 20, false, colMuted, 2)
 
 		for i, d := range disks {
-			ry := contentY + 290 + float64(i)*80
-			c.strMid(c.fit(d.Name, innerW-140, 22, true), innerX, ry+22, 22, true, colText, 0)
-			c.strMid(fmtPct0(d.Util), innerX+innerW, ry+22, 20, false, colSub, 2)
+			ry := contentY + 260 + float64(i)*76
+			c.strMid(c.fit(d.Name, innerW-140, 22, true), innerX, ry+20, 22, true, colText, 0)
+			c.strMid(fmtPct0(d.Util), innerX+innerW, ry+20, 20, false, colSub, 2)
 			line := fmt.Sprintf("读 %s · 写 %s", fmtRate(d.ReadBps), fmtRate(d.WriteBps))
-			c.strMid(line, innerX, ry+54, 20, false, colSub, 0)
+			c.strMid(line, innerX, ry+52, 20, false, colSub, 0)
 		}
 	}
 	return y + h + cardGap
@@ -452,7 +455,7 @@ func (c *cv) sectionIO(y float64) float64 {
 
 // ---------- 内核 ----------
 
-func (c *cv) kernelHeight() float64 { return 494 }
+func (c *cv) kernelHeight() float64 { return 474 }
 
 func (c *cv) sectionKernel(y float64) float64 {
 	h := c.kernelHeight()
@@ -484,7 +487,7 @@ func (c *cv) sectionKernel(y float64) float64 {
 		fhMax = "不限"
 	}
 	fh := fmt.Sprintf("文件句柄 %s / %s", fmtCompactU(k.FileHandles), fhMax)
-	c.strMid(fh, innerX, contentY+390, 20, false, colMuted, 0)
+	c.strMid(fh, innerX, contentY+360, 20, false, colMuted, 0)
 	return y + h + cardGap
 }
 
@@ -522,7 +525,7 @@ func (c *cv) procHeight() float64 {
 	if len(c.snap.ProcsMem) > n {
 		n = len(c.snap.ProcsMem)
 	}
-	return 200 + float64(n)*96
+	return 190 + float64(n)*88
 }
 
 func (c *cv) sectionProcs(y float64) float64 {
@@ -533,19 +536,20 @@ func (c *cv) sectionProcs(y float64) float64 {
 	}
 	innerX, contentY, innerW := c.card(y, h, "进程", meta)
 
-	c.strMid("CPU 占用 TOP", innerX, contentY+20, 22, true, colSub, 0)
+	c.strMid("CPU 占用 TOP", innerX, contentY+18, 22, true, colSub, 0)
 	for i, p := range c.snap.ProcsCPU {
-		c.procRow(innerX, contentY+44+float64(i)*48, innerW, p, false)
+		c.procRow(innerX, contentY+40+float64(i)*44, innerW, p, false)
 	}
 
 	n := len(c.snap.ProcsCPU)
 	if len(c.snap.ProcsMem) > n {
 		n = len(c.snap.ProcsMem)
 	}
-	header2 := contentY + 72 + float64(n)*48
+	header2 := contentY + 75 + float64(n)*44
+	c.hairline(innerX, header2-14, innerW)
 	c.strMid("内存占用 TOP", innerX, header2, 22, true, colSub, 0)
 	for i, p := range c.snap.ProcsMem {
-		c.procRow(innerX, header2+24+float64(i)*48, innerW, p, true)
+		c.procRow(innerX, header2+11+float64(i)*44, innerW, p, true)
 	}
 	return y + h + cardGap
 }
@@ -559,7 +563,7 @@ func (c *cv) procRow(x, y, w float64, p sysinfo.Proc, mem bool) {
 	}
 
 	name := c.fit(p.Name, w-190, 24, false)
-	c.strMid(name, x, y+14, 24, false, colText, 0)
-	c.strMid(fmt.Sprintf("%d", p.PID), x+w-120, y+14, 18, false, colMuted, 2)
-	c.strMid(value, x+w, y+14, 24, true, vcCol, 2)
+	c.strMid(name, x, y+12, 24, false, colText, 0)
+	c.strMid(fmt.Sprintf("%d", p.PID), x+w-120, y+12, 18, false, colMuted, 2)
+	c.strMid(value, x+w, y+12, 24, true, vcCol, 2)
 }

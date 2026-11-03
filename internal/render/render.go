@@ -21,7 +21,7 @@ const (
 	contentW  = designW - 2*marginX
 	cardPad   = 28
 	cardGap   = 24
-	headerH   = 240
+	headerH   = 252
 	footerH   = 80
 	bottomPad = 32
 )
@@ -124,16 +124,18 @@ func (c *cv) drawHeader() {
 	c.spaced("SYSTEM STATUS", x+18, 52, 18, 3, colMuted)
 
 	hostname := c.fit(c.snap.Host.Hostname, contentW, 52, true)
-	c.strMid(hostname, x, 110, 52, true, colStrong, 0)
+	c.strMid(hostname, x, 104, 52, true, colStrong, 0)
 
-	meta := joinNonEmpty(c.snap.Host.OS, c.snap.Host.Kernel, c.snap.Host.Arch, c.snap.Host.Virt)
-	meta = c.fit(meta, contentW, 22, false)
-	c.strMid(meta, x, 152, 22, false, colSub, 0)
+	osLine := c.fit(c.snap.Host.OS, contentW, 20, false)
+	c.strMid(osLine, x, 146, 20, false, colSub, 0)
+	meta := joinNonEmpty(c.snap.Host.Kernel, c.snap.Host.Arch, c.snap.Host.Virt)
+	meta = c.fit(meta, contentW, 20, false)
+	c.strMid(meta, x, 172, 20, false, colMuted, 0)
 
-	c.strMid("运行 "+fmtUptime(c.snap.Host.Uptime), x, 196, 26, true, colStrong, 0)
-	c.strMid("启动于 "+fmtBoot(c.snap.Host.BootTime), right, 196, 20, false, colMuted, 2)
+	c.strMid("运行 "+fmtUptime(c.snap.Host.Uptime), x, 208, 24, true, colStrong, 0)
+	c.strMid("启动于 "+fmtBoot(c.snap.Host.BootTime), right, 208, 18, false, colMuted, 2)
 
-	c.hairline(x, 220, contentW)
+	c.hairline(x, 232, contentW)
 }
 
 func (c *cv) drawFooter(y float64) {

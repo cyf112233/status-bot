@@ -14,6 +14,7 @@ func collectHost(now time.Time) Host {
 		Kernel:   readTrim("/proc/sys/kernel/osrelease"),
 		Arch:     archName(runtime.GOARCH),
 		Virt:     detectVirt(),
+		Timezone: hostTimezone(now),
 	}
 	if up := readTrim("/proc/uptime"); up != "" {
 		if f := strings.Fields(up); len(f) > 0 {
@@ -34,6 +35,13 @@ func collectHost(now time.Time) Host {
 		}
 	}
 	return h
+}
+
+func hostTimezone(now time.Time) string {
+	if tz := readTrim("/etc/timezone"); tz != "" {
+		return tz
+	}
+	return now.Location().String()
 }
 
 func hostname() string {

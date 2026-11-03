@@ -118,11 +118,7 @@ func (c *cv) card(y, h float64, title, meta string) (float64, float64, float64) 
 	innerW := w - 2*cardPad
 	titleY := y + cardPad + 15
 
-	c.dc.SetColor(colAccent)
-	c.dc.DrawCircle(innerX+2.5, titleY, 3)
-	c.dc.Fill()
-
-	c.strMid(title, innerX+14, titleY, 18.5, true, colText, 0)
+	c.strMid(title, innerX, titleY, 18.5, true, colStrong, 0)
 	if meta != "" {
 		meta = c.fit(meta, innerW-160, 12, false)
 		c.strMid(meta, x+w-cardPad, titleY, 12, false, colMuted, 2)

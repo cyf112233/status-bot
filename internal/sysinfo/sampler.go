@@ -23,12 +23,17 @@ type Sampler struct {
 	prevIO   map[string]diskIORaw
 	prevProc map[int]uint64
 
+	prevKernel kernelRaw
+	hasKernel  bool
+
 	wifiCache map[string]wifiExtra
 	gpus      []GPU
 	gpuAt     time.Time
 	gpuTTL    time.Duration
 
-	cpuModel string
+	cpuModel    string
+	cpuGovernor string
+	cpuCacheKB  uint64
 }
 
 func New(interval time.Duration, topN, maxDisks int) *Sampler {
@@ -36,14 +41,16 @@ func New(interval time.Duration, topN, maxDisks int) *Sampler {
 		interval = time.Second
 	}
 	return &Sampler{
-		interval:  interval,
-		topN:      topN,
-		maxDisks:  maxDisks,
-		prevNet:   map[string]netCounters{},
-		prevIO:    map[string]diskIORaw{},
-		prevProc:  map[int]uint64{},
-		wifiCache: map[string]wifiExtra{},
-		cpuModel:  cpuModel(),
+		interval:    interval,
+		topN:        topN,
+		maxDisks:    maxDisks,
+		prevNet:     map[string]netCounters{},
+		prevIO:      map[string]diskIORaw{},
+		prevProc:    map[int]uint64{},
+		wifiCache:   map[string]wifiExtra{},
+		cpuModel:    cpuModel(),
+		cpuGovernor: cpuGovernor(),
+		cpuCacheKB:  cpuCacheKB(),
 	}
 }
 
@@ -98,8 +105,10 @@ func (s *Sampler) sample(ctx context.Context) *Snapshot {
 	curCPU := readCPUTimes()
 	usage := 0.0
 	perCore := make([]float64, 0, len(curCPU))
+	var userPct, sysPct, iowaitPct, stealPct, idlePct float64
 	if len(s.prevCPU) == len(curCPU) && len(curCPU) > 0 {
 		usage = cpuUsage(s.prevCPU[0], curCPU[0])
+		userPct, sysPct, iowaitPct, stealPct, idlePct = cpuBreakdown(s.prevCPU[0], curCPU[0])
 		for i := 1; i < len(curCPU); i++ {
 			perCore = append(perCore, cpuUsage(s.prevCPU[i], curCPU[i]))
 		}
@@ -118,7 +127,7 @@ func (s *Sampler) sample(ctx context.Context) *Snapshot {
 	disks := collectDisks(s.maxDisks)
 
 	rawIO := readDiskIO()
-	ioRate := diffIO(s.prevIO, rawIO, elapsed)
+	ioRate, diskIOs := diffIO(s.prevIO, rawIO, elapsed)
 	s.prevIO = rawIO
 
 	rawNet := readNetDev()
@@ -126,6 +135,12 @@ func (s *Sampler) sample(ctx context.Context) *Snapshot {
 	for k, v := range rawNet {
 		s.prevNet[k] = v
 	}
+	netStats := collectNetStats(nets)
+
+	kernel, rawKernel := collectKernel(s.prevKernel, s.hasKernel, elapsed)
+	s.prevKernel = rawKernel
+	s.hasKernel = true
+	sensors := collectSensors()
 
 	if len(s.gpus) > 0 {
 		s.gpuTTL = 2 * time.Second
@@ -143,19 +158,36 @@ func (s *Sampler) sample(ctx context.Context) *Snapshot {
 		At:   now,
 		Host: collectHost(now),
 		CPU: CPU{
-			Model:   s.cpuModel,
-			Cores:   cores,
-			Usage:   usage,
-			PerCore: perCore,
-			FreqMHz: cpuFreqMHz(),
-			TempC:   cpuTemp(),
-			FanRPM:  cpuFanRPM(),
+			Model:     s.cpuModel,
+			Cores:     cores,
+			Usage:     usage,
+			PerCore:   perCore,
+			FreqMHz:   cpuFreqMHz(),
+			TempC:     cpuTemp(),
+			FanRPM:    cpuFanRPM(),
+			UserPct:   userPct,
+			SysPct:    sysPct,
+			IOWaitPct: iowaitPct,
+			StealPct:  stealPct,
+			IdlePct:   idlePct,
+			Governor:  s.cpuGovernor,
+			CacheKB:   s.cpuCacheKB,
 		},
-		Memory:    mem,
-		GPUs:      append([]GPU(nil), s.gpus...),
-		Disks:     disks,
-		Nets:      nets,
-		IO:        IO{ReadBps: ioRate.readBps, WriteBps: ioRate.writeBps, ReadIOPS: ioRate.readIOPS, WriteIOPS: ioRate.writeIOPS, Util: ioRate.util},
+		Memory:   mem,
+		GPUs:     append([]GPU(nil), s.gpus...),
+		Disks:    disks,
+		Nets:     nets,
+		NetStats: netStats,
+		IO: IO{
+			ReadBps:   ioRate.readBps,
+			WriteBps:  ioRate.writeBps,
+			ReadIOPS:  ioRate.readIOPS,
+			WriteIOPS: ioRate.writeIOPS,
+			Util:      ioRate.util,
+			Disks:     diskIOs,
+		},
+		Kernel:    kernel,
+		Sensors:   sensors,
 		ProcsCPU:  procsCPU,
 		ProcsMem:  procsMem,
 		ProcCount: procCount,

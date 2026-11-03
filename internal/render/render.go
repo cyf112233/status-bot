@@ -55,7 +55,12 @@ func Render(snap *sysinfo.Snapshot, r config.Render) ([]byte, error) {
 	if len(snap.Nets) > 0 {
 		y = c.sectionNets(y)
 	}
+	y = c.sectionNetStats(y)
 	y = c.sectionIO(y)
+	y = c.sectionKernel(y)
+	if len(snap.Sensors) > 0 {
+		y = c.sectionSensors(y)
+	}
 	if len(snap.ProcsCPU) > 0 || len(snap.ProcsMem) > 0 {
 		y = c.sectionProcs(y)
 	}
@@ -92,7 +97,12 @@ func (c *cv) height() float64 {
 	if len(c.snap.Nets) > 0 {
 		y += c.netHeight() + cardGap
 	}
+	y += c.netStatsHeight() + cardGap
 	y += c.ioHeight() + cardGap
+	y += c.kernelHeight() + cardGap
+	if len(c.snap.Sensors) > 0 {
+		y += c.sensorsHeight() + cardGap
+	}
 	if len(c.snap.ProcsCPU) > 0 || len(c.snap.ProcsMem) > 0 {
 		y += c.procHeight() + cardGap
 	}
@@ -110,20 +120,20 @@ func (c *cv) drawHeader() {
 	x := float64(marginX)
 	right := float64(designW - marginX)
 
-	c.dc.SetColor(colAccent)
+	c.dc.SetColor(colMuted)
 	c.dc.DrawCircle(x+3, 40, 3)
 	c.dc.Fill()
-	c.spaced("SYSTEM STATUS", x+15, 40, 10.5, 2.6, colAccent)
+	c.spaced("SYSTEM STATUS", x+15, 40, 10.5, 2.6, colMuted)
 
 	hostname := c.fit(c.snap.Host.Hostname, contentW-320, 36, true)
-	c.strMid(hostname, x, 76, 36, true, colText, 0)
+	c.strMid(hostname, x, 76, 36, true, colStrong, 0)
 
 	meta := joinNonEmpty(c.snap.Host.OS, c.snap.Host.Kernel, c.snap.Host.Arch, c.snap.Host.Virt)
 	meta = c.fit(meta, contentW-320, 13.5, false)
 	c.strMid(meta, x, 108, 13.5, false, colSub, 0)
 
 	c.strMid("运行时长", right, 28, 10.5, false, colMuted, 2)
-	c.strMid(fmtUptime(c.snap.Host.Uptime), right, 60, 25, true, colText, 2)
+	c.strMid(fmtUptime(c.snap.Host.Uptime), right, 60, 25, true, colStrong, 2)
 	c.strMid("启动于 "+fmtBoot(c.snap.Host.BootTime), right, 92, 11, false, colMuted, 2)
 
 	c.hairline(x, 134, contentW)
@@ -131,7 +141,7 @@ func (c *cv) drawHeader() {
 
 func (c *cv) drawFooter(y float64) {
 	c.hairline(marginX, y+4, contentW)
-	left := "statusbot · 采样于 " + fmtClock(c.snap.At)
+	left := "statusbot · " + c.snap.Host.Timezone + " · 采样于 " + fmtClock(c.snap.At)
 	c.strMid(left, marginX, y+24, 10.5, false, colMuted, 0)
 	right := fmt.Sprintf("%d 核 · %s 内存 · %d 个进程", c.snap.CPU.Cores, fmtBytes(c.snap.Memory.Total), c.snap.ProcCount)
 	c.strMid(right, designW-marginX, y+24, 10.5, false, colMuted, 2)

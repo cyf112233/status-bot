@@ -57,7 +57,12 @@ func collectDisks(limit int) []Disk {
 		if total == 0 || used > total {
 			continue
 		}
-		d := Disk{Device: device, Mount: mount, FS: fs, Total: total, Used: used, Free: free}
+		inodes := st.Files
+		inodesUsed := uint64(0)
+		if st.Files >= st.Ffree {
+			inodesUsed = st.Files - st.Ffree
+		}
+		d := Disk{Device: device, Mount: mount, FS: fs, Total: total, Used: used, Free: free, Inodes: inodes, InodesUsed: inodesUsed}
 		key := device
 		if key == "overlay" || key == "none" || key == "" {
 			key = "mount:" + mount

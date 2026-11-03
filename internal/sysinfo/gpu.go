@@ -34,11 +34,15 @@ func collectGPUs(ctx context.Context) []GPU {
 func nvidiaGPUs(ctx context.Context, smi string) []GPU {
 	cctx, cancel := context.WithTimeout(ctx, 1800*time.Millisecond)
 	defer cancel()
-	out, err := exec.CommandContext(cctx, smi,
-		"--query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,power.limit",
-		"--format=csv,noheader,nounits").Output()
+	query := "name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,power.limit,fan.speed,memory.utilization,clocks.current.sm,clocks.current.memory"
+	out, err := exec.CommandContext(cctx, smi, "--query-gpu="+query, "--format=csv,noheader,nounits").Output()
 	if err != nil {
-		return nil
+		out, err = exec.CommandContext(cctx, smi,
+			"--query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,power.limit",
+			"--format=csv,noheader,nounits").Output()
+		if err != nil {
+			return nil
+		}
 	}
 	var gpus []GPU
 	for _, line := range strings.Split(string(out), "\n") {
@@ -58,6 +62,12 @@ func nvidiaGPUs(ctx context.Context, smi string) []GPU {
 			TempC:      parseFloat(f[4]),
 			PowerW:     parseFloat(f[5]),
 			PowerLimit: parseFloat(f[6]),
+		}
+		if len(f) >= 11 {
+			g.Fan = parseFloat(f[7])
+			g.MemUtil = parseFloat(f[8])
+			g.ClockSM = int(parseFloat(f[9]))
+			g.ClockMem = int(parseFloat(f[10]))
 		}
 		gpus = append(gpus, g)
 	}
@@ -83,6 +93,9 @@ func amdGPUs() []GPU {
 		for _, h := range hwmons {
 			if t := readInt(h + "/temp1_input"); t > 0 {
 				g.TempC = float64(t) / 1000
+			}
+			if fan := readInt(h + "/fan1_input"); fan > 0 {
+				g.FanRPM = int(fan)
 			}
 			if p := readInt(h + "/power1_average"); p > 0 {
 				g.PowerW = float64(p) / 1e6

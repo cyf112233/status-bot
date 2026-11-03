@@ -134,10 +134,10 @@ func (c *Config) applyDefaults() {
 		r.Cooldown = 0
 	}
 	if r.TopProcesses <= 0 {
-		r.TopProcesses = 5
-	}
-	if r.TopProcesses > 10 {
 		r.TopProcesses = 10
+	}
+	if r.TopProcesses > 12 {
+		r.TopProcesses = 12
 	}
 	if r.MaxDisks <= 0 {
 		r.MaxDisks = 6

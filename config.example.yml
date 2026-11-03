@@ -7,7 +7,7 @@ render:
   queue: 64            # 排队上限，超过后直接回复繁忙
   cache_seconds: 3     # 缓存窗口，短时间大量请求只渲染一次
   cooldown: 2          # 同一用户触发间隔（秒），0 表示不限制
-  top_processes: 5     # 进程榜数量（CPU/内存各一份）
+  top_processes: 10    # 进程榜数量（CPU/内存各一份）
   max_disks: 6         # 最多展示几个分区
   max_interfaces: 3    # 最多展示几张网卡
 

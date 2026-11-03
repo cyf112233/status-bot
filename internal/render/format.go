@@ -131,3 +131,34 @@ func fmtBoot(t time.Time) string {
 func fmtCount(v int) string {
 	return strconv.Itoa(v)
 }
+
+// fmtCompact 用于较大的计数与每秒速率。
+func fmtCompact(v float64) string {
+	if v < 0 || math.IsNaN(v) || math.IsInf(v, 0) {
+		v = 0
+	}
+	units := []string{"", "k", "M", "G", "T"}
+	i := 0
+	for v >= 1000 && i < len(units)-1 {
+		v /= 1000
+		i++
+	}
+	if i == 0 {
+		return strconv.FormatFloat(v, 'f', 0, 64)
+	}
+	if v < 10 {
+		return strconv.FormatFloat(v, 'f', 1, 64) + units[i]
+	}
+	return strconv.FormatFloat(v, 'f', 0, 64) + units[i]
+}
+
+func fmtCompactU(v uint64) string {
+	return fmtCompact(float64(v))
+}
+
+func fmtCacheKB(kb uint64) string {
+	if kb == 0 {
+		return "—"
+	}
+	return fmtBytes(kb * 1024)
+}

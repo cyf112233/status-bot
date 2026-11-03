@@ -6,8 +6,12 @@ import (
 )
 
 type cpuTimes struct {
-	total uint64
-	idle  uint64
+	total  uint64
+	idle   uint64
+	user   uint64
+	sys    uint64
+	iowait uint64
+	steal  uint64
 }
 
 // readCPUTimes 返回 [总, 核心0, 核心1...]。
@@ -21,17 +25,20 @@ func readCPUTimes() []cpuTimes {
 		if len(fields) < 5 {
 			continue
 		}
+		var vals [8]uint64
 		var t cpuTimes
 		for i, f := range fields[1:] {
-			v := parseUint(f)
 			if i >= 8 {
 				break
 			}
-			t.total += v
-			if i == 3 || i == 4 { // idle + iowait
-				t.idle += v
-			}
+			vals[i] = parseUint(f)
+			t.total += vals[i]
 		}
+		t.user = vals[0] + vals[1]
+		t.sys = vals[2] + vals[5] + vals[6]
+		t.idle = vals[3]
+		t.iowait = vals[4]
+		t.steal = vals[7]
 		out = append(out, t)
 	}
 	return out
@@ -52,18 +59,36 @@ func cpuUsage(prev, cur cpuTimes) float64 {
 	return float64(total-idle) / float64(total) * 100
 }
 
+// cpuBreakdown 返回用户 / 系统 / IO 等待 / 抢占 / 空闲占比。
+func cpuBreakdown(prev, cur cpuTimes) (user, sys, iowait, steal, idle float64) {
+	if cur.total <= prev.total {
+		return
+	}
+	total := float64(cur.total - prev.total)
+	pct := func(a, b uint64) float64 {
+		if b <= a {
+			return 0
+		}
+		return float64(b-a) / total * 100
+	}
+	return pct(prev.user, cur.user), pct(prev.sys, cur.sys),
+		pct(prev.iowait, cur.iowait), pct(prev.steal, cur.steal), pct(prev.idle, cur.idle)
+}
+
 func cpuModel() string {
 	for _, line := range strings.Split(string(readFile("/proc/cpuinfo")), "\n") {
-		key := strings.ToLower(strings.TrimSpace(strings.SplitN(line, ":", 2)[0]))
-		val := ""
-		if p := strings.SplitN(line, ":", 2); len(p) == 2 {
-			val = strings.TrimSpace(p[1])
+		p := strings.SplitN(line, ":", 2)
+		if len(p) != 2 {
+			continue
+		}
+		key := strings.ToLower(strings.TrimSpace(p[0]))
+		val := strings.TrimSpace(p[1])
+		if val == "" || isNumeric(val) {
+			continue
 		}
 		switch key {
 		case "model name", "hardware", "cpu model", "processor":
-			if val != "" && !isNumeric(val) {
-				return val
-			}
+			return val
 		}
 	}
 	return "未知处理器"
@@ -89,7 +114,6 @@ func cpuFreqMHz() float64 {
 			return sum / float64(n)
 		}
 	}
-	// 回退到 /proc/cpuinfo 的 cpu MHz
 	var sum float64
 	var n int
 	for _, line := range strings.Split(string(readFile("/proc/cpuinfo")), "\n") {
@@ -138,7 +162,6 @@ func cpuTemp() float64 {
 	if fallback > 0 {
 		return fallback
 	}
-	// hwmon 兜底
 	hwmons, _ := filepathGlob("/sys/class/hwmon/hwmon*")
 	for _, h := range hwmons {
 		name := strings.ToLower(readTrim(h + "/name"))
@@ -168,4 +191,28 @@ func cpuFanRPM() int {
 		}
 	}
 	return best
+}
+
+func cpuGovernor() string {
+	if s := readTrim("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"); s != "" {
+		return s
+	}
+	return ""
+}
+
+func cpuCacheKB() uint64 {
+	for _, line := range strings.Split(string(readFile("/proc/cpuinfo")), "\n") {
+		if !strings.HasPrefix(strings.ToLower(line), "cache size") {
+			continue
+		}
+		if p := strings.SplitN(line, ":", 2); len(p) == 2 {
+			f := strings.Fields(p[1])
+			if len(f) > 0 {
+				if v, err := strconv.ParseUint(f[0], 10, 64); err == nil {
+					return v
+				}
+			}
+		}
+	}
+	return 0
 }

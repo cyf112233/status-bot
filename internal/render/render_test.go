@@ -31,6 +31,7 @@ func fakeSnapshot() *sysinfo.Snapshot {
 			Total:  uint64(512<<30) + uint64(i)<<30,
 			Used:   uint64(256+i*20) << 30,
 			Free:   uint64(256-i*10) << 30,
+			Inodes: 64 << 20, InodesUsed: uint64(2+i) << 20,
 		})
 	}
 	return &sysinfo.Snapshot{
@@ -48,14 +49,18 @@ func fakeSnapshot() *sysinfo.Snapshot {
 		CPU: sysinfo.CPU{
 			Model: "AMD EPYC 7B13 64-Core Processor", Cores: 64,
 			Usage: 37.4, PerCore: per, FreqMHz: 3200, TempC: 64, FanRPM: 2100,
+			UserPct: 12.3, SysPct: 4.1, IOWaitPct: 0.2, StealPct: 0, IdlePct: 83.4,
+			Governor: "performance", CacheKB: 32768,
 		},
 		Memory: sysinfo.Memory{
 			Total: 64 << 30, Available: 27 << 30, Used: 37 << 30, Cached: 12 << 30,
+			Buffers: 1 << 30, CachedOnly: 9 << 30, SReclaimable: 2 << 30,
 			SwapTotal: 8 << 30, SwapUsed: 1 << 30,
+			Dirty: 64 << 20, Writeback: 0, Slab: 3 << 30, PageTables: 256 << 20, Committed: 48 << 30, Shmem: 512 << 20,
 		},
 		GPUs: []sysinfo.GPU{
-			{Name: "NVIDIA GeForce RTX 4090", Util: 78, MemUsed: 18 << 30, MemTotal: 24 << 30, TempC: 71, PowerW: 320, PowerLimit: 450},
-			{Name: "NVIDIA GeForce RTX 3090", Util: 12, MemUsed: 2 << 30, MemTotal: 24 << 30, TempC: 45, PowerW: 55, PowerLimit: 350},
+			{Name: "NVIDIA GeForce RTX 4090", Util: 78, MemUsed: 18 << 30, MemTotal: 24 << 30, TempC: 71, PowerW: 320, PowerLimit: 450, Fan: 62, MemUtil: 44, ClockSM: 2520, ClockMem: 10501},
+			{Name: "NVIDIA GeForce RTX 3090", Util: 12, MemUsed: 2 << 30, MemTotal: 24 << 30, TempC: 45, PowerW: 55, PowerLimit: 350, Fan: 34, MemUtil: 8, ClockSM: 1395, ClockMem: 9751},
 		},
 		Disks: disks,
 		Nets: []sysinfo.Net{
@@ -63,7 +68,33 @@ func fakeSnapshot() *sysinfo.Snapshot {
 			{Name: "wlan0", Addrs: []string{"192.168.1.20"}, RxRate: 640 << 10, TxRate: 40 << 10, Wireless: true, SSID: "Home-WiFi-5G", Quality: 62, Signal: -51, Bitrate: "866.7 MBit/s"},
 			{Name: "eth1", Addrs: []string{"172.16.0.5"}, RxRate: 1.2 * (1 << 20), TxRate: 300 << 10},
 		},
-		IO:       sysinfo.IO{ReadBps: 120 << 20, WriteBps: 34 << 20, ReadIOPS: 1200, WriteIOPS: 480, Util: 63.2},
+		NetStats: sysinfo.NetStats{
+			TCPEstablished: 128, TCPListen: 14, TCPTimeWait: 37, TCPTotal: 245,
+			Gateway: "192.168.1.1", DNS: []string{"223.5.5.5", "119.29.29.29"},
+			RxTotal: 900 << 30, TxTotal: 120 << 30,
+		},
+		IO: sysinfo.IO{
+			ReadBps: 120 << 20, WriteBps: 34 << 20, ReadIOPS: 1200, WriteIOPS: 480, Util: 63.2,
+			Disks: []sysinfo.DiskIO{
+				{Name: "nvme0n1", ReadBps: 80 << 20, WriteBps: 20 << 20, Util: 72},
+				{Name: "nvme1n1", ReadBps: 30 << 20, WriteBps: 12 << 20, Util: 41},
+				{Name: "sda", ReadBps: 10 << 20, WriteBps: 2 << 20, Util: 12},
+			},
+		},
+		Kernel: sysinfo.Kernel{
+			CTXPerSec: 23456, IntrPerSec: 18234, ForksPerSec: 12.4,
+			CTXTotal: 2345678901, IntrTotal: 1823456789, ForksTotal: 45678,
+			Running: 3, Blocked: 0, Threads: 1289,
+			FileHandles: 4096, FileHandlesMax: 9223372036854775807,
+		},
+		Sensors: []sysinfo.Sensor{
+			{Name: "Package id 0 · coretemp", Value: 64, Unit: "°C"},
+			{Name: "Composite · nvme", Value: 41, Unit: "°C"},
+			{Name: "edge · amdgpu", Value: 58, Unit: "°C"},
+			{Name: "CPU Fan · it8728", Value: 1850, Unit: "RPM"},
+			{Name: "Sensor 2 · it8728", Value: 38, Unit: "°C"},
+			{Name: "Sensor 3 · it8728", Value: 42, Unit: "°C"},
+		},
 		ProcsCPU: cpuProcs, ProcsMem: memProcs, ProcCount: 312,
 	}
 }

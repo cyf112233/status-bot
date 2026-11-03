@@ -2,6 +2,7 @@ package sysinfo
 
 import (
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -21,9 +22,7 @@ type ioRate struct {
 	util      float64
 }
 
-var (
-	physicalDisk = regexp.MustCompile(`^(sd[a-z]+|hd[a-z]+|vd[a-z]+|xvd[a-z]+|nvme[0-9]+n[0-9]+|mmcblk[0-9]+|md[0-9]+)$`)
-)
+var physicalDisk = regexp.MustCompile("^(sd[a-z]+|hd[a-z]+|vd[a-z]+|xvd[a-z]+|nvme[0-9]+n[0-9]+|mmcblk[0-9]+|md[0-9]+)$")
 
 func readDiskIO() map[string]diskIORaw {
 	out := map[string]diskIORaw{}
@@ -47,33 +46,45 @@ func readDiskIO() map[string]diskIORaw {
 	return out
 }
 
-func diffIO(prev, cur map[string]diskIORaw, elapsed float64) ioRate {
+// diffIO 返回汇总值与每块磁盘的明细，按吞吐量降序。
+func diffIO(prev, cur map[string]diskIORaw, elapsed float64) (ioRate, []DiskIO) {
 	if elapsed <= 0 {
-		return ioRate{}
+		return ioRate{}, nil
 	}
 	var r ioRate
 	var n float64
+	var list []DiskIO
 	for name, c := range cur {
 		p, ok := prev[name]
 		if !ok {
 			continue
 		}
 		n++
+		di := DiskIO{Name: name}
 		if c.readSectors >= p.readSectors {
-			r.readBps += float64(c.readSectors-p.readSectors) * 512 / elapsed
+			di.ReadBps = float64(c.readSectors-p.readSectors) * 512 / elapsed
 		}
 		if c.writeSectors >= p.writeSectors {
-			r.writeBps += float64(c.writeSectors-p.writeSectors) * 512 / elapsed
+			di.WriteBps = float64(c.writeSectors-p.writeSectors) * 512 / elapsed
 		}
 		if c.readIOs >= p.readIOs {
-			r.readIOPS += float64(c.readIOs-p.readIOs) / elapsed
+			di.ReadIOPS = float64(c.readIOs-p.readIOs) / elapsed
 		}
 		if c.writeIOs >= p.writeIOs {
-			r.writeIOPS += float64(c.writeIOs-p.writeIOs) / elapsed
+			di.WriteIOPS = float64(c.writeIOs-p.writeIOs) / elapsed
 		}
-		if c.ioMillis >= p.ioMillis && elapsed > 0 {
-			r.util += float64(c.ioMillis-p.ioMillis) / (elapsed * 1000) * 100
+		if c.ioMillis >= p.ioMillis {
+			di.Util = float64(c.ioMillis-p.ioMillis) / (elapsed * 1000) * 100
 		}
+		if di.Util > 100 {
+			di.Util = 100
+		}
+		r.readBps += di.ReadBps
+		r.writeBps += di.WriteBps
+		r.readIOPS += di.ReadIOPS
+		r.writeIOPS += di.WriteIOPS
+		r.util += di.Util
+		list = append(list, di)
 	}
 	if n > 1 {
 		r.util /= n
@@ -81,5 +92,8 @@ func diffIO(prev, cur map[string]diskIORaw, elapsed float64) ioRate {
 	if r.util > 100 {
 		r.util = 100
 	}
-	return r
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].ReadBps+list[i].WriteBps > list[j].ReadBps+list[j].WriteBps
+	})
+	return r, list
 }

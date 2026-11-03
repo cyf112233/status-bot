@@ -1,0 +1,17 @@
+[Unit]
+Description=statusbot - OneBot system status image bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/statusbot
+ExecStart=/opt/statusbot/statusbot -config /opt/statusbot/config.yml
+Restart=always
+RestartSec=5
+LimitNOFILE=65535
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,56 @@
+# statusbot 配置文件
+# 修改后发送 SIGHUP 可热加载命令、白名单与渲染参数（连接变更需重启）。
+
+render:
+  width: 1080          # 图片宽度（720-2160）
+  concurrency: 1       # 同时渲染数量；1G 内存建议 1
+  queue: 64            # 排队上限，超过后直接回复繁忙
+  cache_seconds: 3     # 缓存窗口，短时间大量请求只渲染一次
+  cooldown: 2          # 同一用户触发间隔（秒），0 表示不限制
+  top_processes: 5     # 进程榜数量（CPU/内存各一份）
+  max_disks: 6         # 最多展示几个分区
+  max_interfaces: 3    # 最多展示几张网卡
+
+# 只有当消息的全部内容与其中一项完全一致时才会触发
+commands:
+  - "状态"
+  - "查状态"
+  - "status"
+
+# 允许使用的 QQ 号；留空表示所有人可用
+users: []
+# users:
+#   - 123456789
+#   - "987654321"
+
+# 可同时配置多个连接，每个连接独立 token
+connections:
+  # 正向 WebSocket：程序主动连接 OneBot 实现
+  - type: forward
+    name: "本机-onebot"
+    url: "ws://127.0.0.1:3001"
+    token: ""
+    enabled: true
+
+  # 可以继续添加多个正向连接，每个连接独立 token
+  # - type: forward
+  #   name: "备用-onebot"
+  #   url: "ws://10.0.0.2:3001"
+  #   token: "another-token"
+  #   enabled: true
+
+  # 反向 WebSocket：OneBot 实现连接到本程序
+  # - type: reverse
+  #   name: "反向连接"
+  #   port: 8080
+  #   path: "/onebot/v11/ws"
+  #   token: ""
+  #   enabled: true
+
+  # 同一端口可以挂多个路径，各自使用不同 token
+  # - type: reverse
+  #   name: "第二个反向连接"
+  #   port: 8080
+  #   path: "/onebot/second"
+  #   token: "second-token"
+  #   enabled: true

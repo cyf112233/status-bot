@@ -100,7 +100,7 @@ func fakeSnapshot() *sysinfo.Snapshot {
 }
 
 func TestRenderSynthetic(t *testing.T) {
-	pngBytes, err := Render(fakeSnapshot(), config.Render{Width: 1080, TopProcesses: 8})
+	pngBytes, err := Render(fakeSnapshot(), config.Render{Width: 900, TopProcesses: 8})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestRenderSynthetic(t *testing.T) {
 		t.Fatal(err)
 	}
 	b := img.Bounds()
-	if b.Dx() != 1080 {
+	if b.Dx() != 900 {
 		t.Fatalf("width = %d", b.Dx())
 	}
 	if b.Dy() < 1400 {

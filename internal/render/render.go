@@ -16,20 +16,19 @@ import (
 )
 
 const (
-	designW   = 900
-	marginX   = 30
+	designW   = 720
+	marginX   = 28
 	contentW  = designW - 2*marginX
-	cardPad   = 22
-	cardGap   = 16
-	headerH   = 160
-	footerH   = 50
-	bottomPad = 26
+	cardPad   = 28
+	cardGap   = 24
+	headerH   = 240
+	footerH   = 80
+	bottomPad = 32
 )
 
-// Preload 预加载随程序打包的字体，避免首个请求承担解析开销。
 func Preload() error { return loadFonts() }
 
-// Render 绘制状态图。以手机竖屏为优先，按 900 宽排版后按需缩放。
+// Render 以手机阅读为第一优先级：720 宽、偏大的字与行距，高度自由增长。
 func Render(snap *sysinfo.Snapshot, r config.Render) ([]byte, error) {
 	if err := loadFonts(); err != nil {
 		return nil, err
@@ -76,7 +75,7 @@ func Render(snap *sysinfo.Snapshot, r config.Render) ([]byte, error) {
 	}
 
 	var buf bytes.Buffer
-	buf.Grow(384 * 1024)
+	buf.Grow(512 * 1024)
 	enc := png.Encoder{CompressionLevel: png.BestSpeed}
 	if err := enc.Encode(&buf, img); err != nil {
 		return nil, err
@@ -120,28 +119,27 @@ func (c *cv) drawHeader() {
 	right := float64(designW - marginX)
 
 	c.dc.SetColor(colMuted)
-	c.dc.DrawCircle(x+3, 42, 3)
+	c.dc.DrawCircle(x+4, 52, 4)
 	c.dc.Fill()
-	c.spaced("SYSTEM STATUS", x+15, 42, 11, 2.4, colMuted)
+	c.spaced("SYSTEM STATUS", x+18, 52, 18, 3, colMuted)
 
-	hostname := c.fit(c.snap.Host.Hostname, contentW-300, 34, true)
-	c.strMid(hostname, x, 82, 34, true, colStrong, 0)
+	hostname := c.fit(c.snap.Host.Hostname, contentW, 52, true)
+	c.strMid(hostname, x, 110, 52, true, colStrong, 0)
 
 	meta := joinNonEmpty(c.snap.Host.OS, c.snap.Host.Kernel, c.snap.Host.Arch, c.snap.Host.Virt)
-	meta = c.fit(meta, contentW-300, 13.5, false)
-	c.strMid(meta, x, 112, 13.5, false, colSub, 0)
+	meta = c.fit(meta, contentW, 22, false)
+	c.strMid(meta, x, 152, 22, false, colSub, 0)
 
-	c.strMid("运行时长", right, 30, 11, false, colMuted, 2)
-	c.strMid(fmtUptime(c.snap.Host.Uptime), right, 62, 24, true, colStrong, 2)
-	c.strMid("启动于 "+fmtBoot(c.snap.Host.BootTime), right, 94, 11.5, false, colMuted, 2)
+	c.strMid("运行 "+fmtUptime(c.snap.Host.Uptime), x, 196, 26, true, colStrong, 0)
+	c.strMid("启动于 "+fmtBoot(c.snap.Host.BootTime), right, 196, 20, false, colMuted, 2)
 
-	c.hairline(x, 138, contentW)
+	c.hairline(x, 220, contentW)
 }
 
 func (c *cv) drawFooter(y float64) {
-	c.hairline(marginX, y+4, contentW)
-	left := "statusbot · " + c.snap.Host.Timezone + " · 采样于 " + fmtClock(c.snap.At)
-	c.strMid(left, marginX, y+26, 11, false, colMuted, 0)
-	right := fmt.Sprintf("%d 核 · %s 内存 · %d 个进程", c.snap.CPU.Cores, fmtBytes(c.snap.Memory.Total), c.snap.ProcCount)
-	c.strMid(right, designW-marginX, y+26, 11, false, colMuted, 2)
+	c.hairline(marginX, y+6, contentW)
+	left := "statusbot · 采样于 " + fmtClock(c.snap.At)
+	c.strMid(left, marginX, y+40, 18, false, colMuted, 0)
+	right := fmt.Sprintf("%d 核 · %s 内存 · %d 进程", c.snap.CPU.Cores, fmtBytes(c.snap.Memory.Total), c.snap.ProcCount)
+	c.strMid(right, designW-marginX, y+40, 18, false, colMuted, 2)
 }

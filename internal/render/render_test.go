@@ -100,7 +100,7 @@ func fakeSnapshot() *sysinfo.Snapshot {
 }
 
 func TestRenderSynthetic(t *testing.T) {
-	pngBytes, err := Render(fakeSnapshot(), config.Render{Width: 900, TopProcesses: 8})
+	pngBytes, err := Render(fakeSnapshot(), config.Render{Width: 720, TopProcesses: 8})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestRenderSynthetic(t *testing.T) {
 		t.Fatal(err)
 	}
 	b := img.Bounds()
-	if b.Dx() != 900 {
+	if b.Dx() != 720 {
 		t.Fatalf("width = %d", b.Dx())
 	}
 	if b.Dy() < 1400 {
@@ -124,7 +124,7 @@ func TestRenderSynthetic(t *testing.T) {
 }
 
 func TestRenderScaledWidth(t *testing.T) {
-	pngBytes, err := Render(fakeSnapshot(), config.Render{Width: 720, TopProcesses: 8})
+	pngBytes, err := Render(fakeSnapshot(), config.Render{Width: 1080, TopProcesses: 8})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,8 +132,8 @@ func TestRenderScaledWidth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if img.Bounds().Dx() != 720 {
-		t.Fatalf("width = %d, want 720", img.Bounds().Dx())
+	if img.Bounds().Dx() != 1080 {
+		t.Fatalf("width = %d, want 1080", img.Bounds().Dx())
 	}
 }
 

@@ -31,7 +31,7 @@ func TestEndToEndForward(t *testing.T) {
 commands: ["状态"]
 users: []
 render:
-  width: 900
+  width: 720
   concurrency: 1
   cache_seconds: 3
   queue: 4
@@ -134,7 +134,7 @@ connections: []
 	if err != nil {
 		t.Fatal(err)
 	}
-	if img.Bounds().Dx() != 900 || img.Bounds().Dy() < 800 {
+	if img.Bounds().Dx() != 720 || img.Bounds().Dy() < 800 {
 		t.Fatalf("图片尺寸异常: %v", img.Bounds())
 	}
 }

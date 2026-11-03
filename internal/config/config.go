@@ -119,7 +119,7 @@ func Load(path string) (*Config, error) {
 func (c *Config) applyDefaults() {
 	r := &c.Render
 	if r.Width == 0 {
-		r.Width = 900
+		r.Width = 720
 	}
 	if r.Concurrency <= 0 {
 		r.Concurrency = 1

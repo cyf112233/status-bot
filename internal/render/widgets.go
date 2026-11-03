@@ -110,20 +110,20 @@ func (c *cv) hairline(x, y, w float64) {
 func (c *cv) card(y, h float64, title, meta string) (float64, float64, float64) {
 	x := float64(marginX)
 	w := float64(contentW)
-	radius := 22.0
+	radius := 32.0
 
 	c.roundedFill(x, y, w, h, radius, colCard)
 
 	innerX := x + cardPad
 	innerW := w - 2*cardPad
-	titleY := y + cardPad + 16
+	titleY := y + cardPad + 24
 
-	c.strMid(title, innerX, titleY, 20, true, colStrong, 0)
+	c.strMid(title, innerX, titleY, 36, true, colStrong, 0)
 	if meta != "" {
-		meta = c.fit(meta, innerW-180, 12, false)
-		c.strMid(meta, x+w-cardPad, titleY, 12, false, colMuted, 2)
+		meta = c.fit(meta, innerW-240, 22, false)
+		c.strMid(meta, x+w-cardPad, titleY, 22, false, colMuted, 2)
 	}
-	return innerX, y + cardPad + 32, innerW
+	return innerX, y + cardPad + 48, innerW
 }
 
 // bar 绘制 Miuix 风格的纯色圆角进度条。
@@ -179,15 +179,15 @@ func (c *cv) ring(cx, cy, radius, stroke, pct float64, col color.NRGBA) {
 func (c *cv) tile(x, y, w, h float64, label, value, sub string, col color.NRGBA) {
 	c.roundedFill(x, y, w, h, 16, colCardHigh)
 
-	c.strMid(label, x+16, y+16, 11.5, false, colMuted, 0)
-	c.strMid(value, x+16, y+40, 20, true, col, 0)
-	c.strMid(sub, x+16, y+60, 11, false, colMuted, 0)
+	c.strMid(label, x+24, y+24, 20, false, colMuted, 0)
+	c.strMid(value, x+24, y+60, 38, true, col, 0)
+	c.strMid(sub, x+24, y+92, 18, false, colMuted, 0)
 }
 
 func (c *cv) tag(x, y float64, text string, col color.NRGBA) float64 {
-	size := 10.0
-	w := c.measure(text, size, true) + 14
-	h := 17.0
+	size := 16.0
+	w := c.measure(text, size, true) + 22
+	h := 26.0
 	c.roundedFill(x, y-h/2, w, h, 7, alpha(col, 30))
 	c.dc.SetColor(alpha(col, 90))
 	c.dc.SetLineWidth(0.8)

@@ -96,7 +96,7 @@ func (c *cv) sectionCPU(y float64) float64 {
 		x := innerX + float64(colIdx)*(cellW+gap)
 		yy := gridTop + float64(r)*34
 		c.strMid(fmt.Sprintf("C%d", i), x, yy+7, 11, false, colMuted, 0)
-		c.strMid(fmtPct0(p), x+cellW, yy+7, 11, false, colSub, 2)
+		c.strMid(fmtPct0(p), x+34, yy+7, 11, false, colSub, 0)
 		c.bar(x, yy+16, cellW, 8, p, healthColor(p))
 	}
 

@@ -110,14 +110,9 @@ func (c *cv) hairline(x, y, w float64) {
 func (c *cv) card(y, h float64, title, meta string) (float64, float64, float64) {
 	x := float64(marginX)
 	w := float64(contentW)
-	radius := 18.0
+	radius := 22.0
 
 	c.roundedFill(x, y, w, h, radius, colCard)
-
-	c.dc.SetColor(colBorder)
-	c.dc.SetLineWidth(1)
-	c.dc.DrawRoundedRectangle(x+0.5, y+0.5, w-1, h-1, radius)
-	c.dc.Stroke()
 
 	innerX := x + cardPad
 	innerW := w - 2*cardPad
@@ -135,8 +130,8 @@ func (c *cv) card(y, h float64, title, meta string) (float64, float64, float64) 
 	return innerX, y + cardPad + 30, innerW
 }
 
-// bar 绘制圆角进度条。
-func (c *cv) bar(x, y, w, h, pct float64, from, to color.NRGBA) {
+// bar 绘制 Miuix 风格的纯色圆角进度条。
+func (c *cv) bar(x, y, w, h, pct float64, fill color.NRGBA) {
 	if pct < 0 {
 		pct = 0
 	}
@@ -155,9 +150,7 @@ func (c *cv) bar(x, y, w, h, pct float64, from, to color.NRGBA) {
 	if fw > w {
 		fw = w
 	}
-	c.dc.SetFillStyle(gradient(x, y, x+fw, y, from, to))
-	c.dc.DrawRoundedRectangle(x, y, fw, h, r)
-	c.dc.Fill()
+	c.roundedFill(x, y, fw, h, r, fill)
 }
 
 func (c *cv) ring(cx, cy, radius, stroke, pct float64, col color.NRGBA) {
@@ -179,11 +172,6 @@ func (c *cv) ring(cx, cy, radius, stroke, pct float64, col color.NRGBA) {
 	end := start + 2*math.Pi*pct/100
 
 	c.dc.SetLineCapRound()
-	c.dc.SetColor(alpha(col, 36))
-	c.dc.SetLineWidth(stroke + 10)
-	c.dc.DrawArc(cx, cy, radius, start, end)
-	c.dc.Stroke()
-
 	c.dc.SetLineWidth(stroke)
 	c.dc.SetColor(col)
 	c.dc.DrawArc(cx, cy, radius, start, end)
@@ -193,11 +181,7 @@ func (c *cv) ring(cx, cy, radius, stroke, pct float64, col color.NRGBA) {
 
 // tile 绘制一个指标块。
 func (c *cv) tile(x, y, w, h float64, label, value, sub string, col color.NRGBA) {
-	c.roundedFill(x, y, w, h, 12, color.NRGBA{0x0E, 0x15, 0x1F, 0xFF})
-	c.dc.SetColor(color.NRGBA{0xFF, 0xFF, 0xFF, 0x05})
-	c.dc.SetLineWidth(1)
-	c.dc.DrawRoundedRectangle(x+0.5, y+0.5, w-1, h-1, 12)
-	c.dc.Stroke()
+	c.roundedFill(x, y, w, h, 16, colCardHigh)
 
 	c.strMid(label, x+14, y+16, 11, false, colMuted, 0)
 	c.strMid(value, x+14, y+39, 19, true, col, 0)

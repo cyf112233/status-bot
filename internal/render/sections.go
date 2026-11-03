@@ -97,7 +97,7 @@ func (c *cv) sectionCPU(y float64) float64 {
 		c.strMid(fmt.Sprintf("C%d", i), x, yy+6, 9.5, false, colMuted, 0)
 		c.strMid(fmtPct0(p), x+30, yy+6, 9.5, false, colSub, 0)
 		pc := healthColor(p)
-		c.bar(x, yy+13, cellW, 6, p, pc, lighten(pc, 22))
+		c.bar(x, yy+13, cellW, 6, p, pc)
 	}
 	return y + h + cardGap
 }
@@ -115,20 +115,20 @@ func (c *cv) sectionMemory(y float64) float64 {
 	if m.Total > 0 {
 		ramPct = float64(m.Used) / float64(m.Total) * 100
 	}
-	c.memRow(innerX, contentY, innerW, "物理内存", m.Used, m.Total, ramPct, colAccent2, colViolet)
+	c.memRow(innerX, contentY, innerW, "物理内存", m.Used, m.Total, ramPct, colAccent)
 
 	swapPct := 0.0
 	if m.SwapTotal > 0 {
 		swapPct = float64(m.SwapUsed) / float64(m.SwapTotal) * 100
 	}
-	c.memRow(innerX, contentY+58, innerW, "交换空间", m.SwapUsed, m.SwapTotal, swapPct, colAmber, color.NRGBA{0xFF, 0x8A, 0x5C, 0xFF})
+	c.memRow(innerX, contentY+58, innerW, "交换空间", m.SwapUsed, m.SwapTotal, swapPct, colAccent2)
 
 	detail := fmt.Sprintf("缓存 %s · 可用 %s", fmtBytes(m.Cached), fmtBytes(m.Available))
 	c.strMid(detail, innerX, contentY+58+48+10, 10.5, false, colMuted, 0)
 	return y + h + cardGap
 }
 
-func (c *cv) memRow(x, y, w float64, label string, used, total uint64, pct float64, from, to color.NRGBA) {
+func (c *cv) memRow(x, y, w float64, label string, used, total uint64, pct float64, fill color.NRGBA) {
 	c.strMid(label, x, y+10, 13.5, true, colText, 0)
 	right := "未启用"
 	if total > 0 {
@@ -136,7 +136,7 @@ func (c *cv) memRow(x, y, w float64, label string, used, total uint64, pct float
 	}
 	c.strMid(right, x+w, y+10, 12, false, colSub, 2)
 	if total > 0 {
-		c.bar(x, y+28, w, 9, pct, from, to)
+		c.bar(x, y+28, w, 9, pct, fill)
 	} else {
 		c.roundedFill(x, y+28, w, 9, 4.5, colTrack)
 	}
@@ -170,7 +170,7 @@ func (c *cv) sectionGPU(y float64) float64 {
 		c.strMid(chips, innerX+innerW, by+10, 10.5, false, colSub, 2)
 
 		c.strMid("使用率", innerX, by+36, 10.5, false, colMuted, 0)
-		c.bar(innerX+62, by+32, innerW-62-58, 8, g.Util, colAccent, colAccent2)
+		c.bar(innerX+62, by+32, innerW-62-58, 8, g.Util, colAccent)
 		c.strMid(fmtPct0(g.Util), innerX+innerW, by+36, 11.5, true, colText, 2)
 
 		memLabel := "显存"
@@ -183,7 +183,7 @@ func (c *cv) sectionGPU(y float64) float64 {
 		if g.MemTotal > 0 {
 			memPct = float64(g.MemUsed) / float64(g.MemTotal) * 100
 		}
-		c.bar(innerX+190, by+60, innerW-190-58, 8, memPct, colAccent2, colViolet)
+		c.bar(innerX+190, by+60, innerW-190-58, 8, memPct, colAccent2)
 		c.strMid(fmtPct0(memPct), innerX+innerW, by+64, 11.5, true, colText, 2)
 	}
 	return y + h + cardGap
@@ -230,12 +230,12 @@ func (c *cv) sectionDisks(y float64) float64 {
 		c.strMid(dev, innerX, ry+30, 10, false, colMuted, 0)
 
 		dcColor := healthColor(pct)
-		c.bar(innerX+250, ry+17, innerW-250-166, 8, pct, dcColor, lighten(dcColor, 22))
+		c.bar(innerX+250, ry+17, innerW-250-166, 8, pct, dcColor)
 
 		vc := colText
-		if pct >= 85 {
+		if pct >= 90 {
 			vc = colRed
-		} else if pct >= 70 {
+		} else if pct >= 80 {
 			vc = colAmber
 		}
 		c.strMid(fmtPct(pct), innerX+innerW, ry+12, 12.5, true, vc, 2)
@@ -280,8 +280,8 @@ func (c *cv) sectionNets(y float64) float64 {
 		addr = c.fit(addr, innerW-240, 10.5, false)
 		c.strMid(addr, innerX, ry+32, 10.5, false, colMuted, 0)
 
-		c.strMid(speedText(n.RxRate, true), innerX+innerW, ry+12, 12.5, true, colAccent2, 2)
-		c.strMid(speedText(n.TxRate, false), innerX+innerW, ry+32, 11.5, false, colViolet, 2)
+		c.strMid(speedText(n.RxRate, true), innerX+innerW, ry+12, 12.5, true, colAccent, 2)
+		c.strMid(speedText(n.TxRate, false), innerX+innerW, ry+32, 11.5, false, colSub, 2)
 
 		if i < len(nets)-1 {
 			c.hairline(innerX, ry+50, innerW)
@@ -324,8 +324,8 @@ func (c *cv) sectionIO(y float64) float64 {
 
 	const gap = 12.0
 	tw := (innerW - 2*gap) / 3
-	c.tile(innerX, contentY, tw, 76, "读取速率", fmtRate(io.ReadBps), fmt.Sprintf("IOPS %.0f", io.ReadIOPS), colAccent2)
-	c.tile(innerX+tw+gap, contentY, tw, 76, "写入速率", fmtRate(io.WriteBps), fmt.Sprintf("IOPS %.0f", io.WriteIOPS), colViolet)
+	c.tile(innerX, contentY, tw, 76, "读取速率", fmtRate(io.ReadBps), fmt.Sprintf("IOPS %.0f", io.ReadIOPS), colAccent)
+	c.tile(innerX+tw+gap, contentY, tw, 76, "写入速率", fmtRate(io.WriteBps), fmt.Sprintf("IOPS %.0f", io.WriteIOPS), colSub)
 	c.tile(innerX+2*(tw+gap), contentY, tw, 76, "磁盘繁忙", fmtPct(io.Util), "繁忙时间占比", healthColor(io.Util))
 	return y + h + cardGap
 }
@@ -348,7 +348,7 @@ func (c *cv) sectionProcs(y float64) float64 {
 	colW := (innerW - gap) / 2
 
 	c.strMid("CPU 占用 TOP", innerX, contentY+8, 10.5, true, colAccent, 0)
-	c.strMid("内存占用 TOP", innerX+colW+gap, contentY+8, 10.5, true, colViolet, 0)
+	c.strMid("内存占用 TOP", innerX+colW+gap, contentY+8, 10.5, true, colSub, 0)
 
 	rows := len(c.snap.ProcsCPU)
 	if len(c.snap.ProcsMem) > rows {
@@ -369,7 +369,9 @@ func (c *cv) sectionProcs(y float64) float64 {
 func (c *cv) procRow(x, y, w float64, p sysinfo.Proc, mem bool) {
 	value := fmtProcCPU(p.CPU)
 	vcCol := colText
-	if p.CPU >= 50 {
+	if p.CPU >= 200 {
+		vcCol = colRed
+	} else if p.CPU >= 100 {
 		vcCol = colAmber
 	}
 	if mem {

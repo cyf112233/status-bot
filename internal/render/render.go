@@ -5,11 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"image/color"
-	"image/draw"
 	"image/png"
 	"math"
-	"sync"
 
 	"github.com/fogleman/gg"
 	xdraw "golang.org/x/image/draw"
@@ -102,70 +99,11 @@ func (c *cv) height() float64 {
 	return y + footerH + bottomPad
 }
 
-var (
-	bgMu    sync.Mutex
-	bgCache = map[int]*image.RGBA{}
-)
-
-// background 生成并缓存与高度绑定的背景（半分辨率绘制后放大，保证速度）。
+// background 使用 Miuix 深色的 surface（纯黑），保持整屏干净。
 func (c *cv) background(h int) {
-	bgMu.Lock()
-	img, ok := bgCache[h]
-	if !ok {
-		img = buildBackground(h)
-		if len(bgCache) >= 3 {
-			for k := range bgCache {
-				delete(bgCache, k)
-			}
-		}
-		bgCache[h] = img
-	}
-	bgMu.Unlock()
-	dst := c.dc.Image().(*image.RGBA)
-	draw.Draw(dst, dst.Bounds(), img, image.Point{}, draw.Src)
-}
-
-func buildBackground(h int) *image.RGBA {
-	sw, sh := designW/2, h/2+1
-	dc := gg.NewContext(sw, sh)
-	w, hh := float64(sw), float64(sh)
-
-	g := gg.NewLinearGradient(0, 0, 0, hh)
-	g.AddColorStop(0, colBgTop)
-	g.AddColorStop(0.45, colBgMid)
-	g.AddColorStop(1, colBgBottom)
-	dc.SetFillStyle(g)
-	dc.DrawRectangle(0, 0, w, hh)
-	dc.Fill()
-
-	cx, cy, radius := w-45.0, -20.0, 310.0
-	rg := gg.NewRadialGradient(cx, cy, 0, cx, cy, radius)
-	rg.AddColorStop(0, color.NRGBA{0x2F, 0xD8, 0xC4, 0x26})
-	rg.AddColorStop(0.5, color.NRGBA{0x2F, 0xD8, 0xC4, 0x0A})
-	rg.AddColorStop(1, color.NRGBA{0x2F, 0xD8, 0xC4, 0x00})
-	dc.SetFillStyle(rg)
-	dc.DrawCircle(cx, cy, radius)
-	dc.Fill()
-
-	cx, cy = 30, hh-60
-	rg = gg.NewRadialGradient(cx, cy, 0, cx, cy, 260)
-	rg.AddColorStop(0, color.NRGBA{0x4C, 0x9B, 0xFF, 0x18})
-	rg.AddColorStop(1, color.NRGBA{0x4C, 0x9B, 0xFF, 0x00})
-	dc.SetFillStyle(rg)
-	dc.DrawCircle(cx, cy, 260)
-	dc.Fill()
-
-	line := gg.NewLinearGradient(0, 0, w, 0)
-	line.AddColorStop(0, colAccent)
-	line.AddColorStop(0.55, colAccent2)
-	line.AddColorStop(1, colViolet)
-	dc.SetFillStyle(line)
-	dc.DrawRectangle(0, 0, w, 1.5)
-	dc.Fill()
-
-	full := image.NewRGBA(image.Rect(0, 0, designW, h))
-	xdraw.CatmullRom.Scale(full, full.Bounds(), dc.Image(), dc.Image().Bounds(), xdraw.Over, nil)
-	return full
+	c.dc.SetColor(colBg)
+	c.dc.DrawRectangle(0, 0, designW, float64(h))
+	c.dc.Fill()
 }
 
 func (c *cv) drawHeader() {

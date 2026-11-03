@@ -1,29 +1,24 @@
 package render
 
-import (
-	"image/color"
+import "image/color"
 
-	"github.com/fogleman/gg"
-)
-
+// 取色自 Miuix darkColorScheme 的深色语义 token。
+// 画面遵守 Miuix 规则：黑 / 白 / 灰 + 唯一强调色蓝，只有状态（告警/异常）才出现琥珀与红。
 var (
-	colBgTop    = color.NRGBA{0x08, 0x0D, 0x14, 0xFF}
-	colBgMid    = color.NRGBA{0x0B, 0x13, 0x1D, 0xFF}
-	colBgBottom = color.NRGBA{0x0A, 0x10, 0x18, 0xFF}
+	colBg       = color.NRGBA{0x00, 0x00, 0x00, 0xFF} // surface
+	colCard     = color.NRGBA{0x24, 0x24, 0x24, 0xFF} // surfaceContainer
+	colCardHigh = color.NRGBA{0x2D, 0x2D, 0x2D, 0xFF} // surfaceContainerHighest
+	colTrack    = color.NRGBA{0x39, 0x39, 0x39, 0xFF} // dividerLine
+	colDivider  = color.NRGBA{0x39, 0x39, 0x39, 0xFF}
 
-	colCard    = color.NRGBA{0x13, 0x1C, 0x28, 0xFF}
-	colBorder  = color.NRGBA{0x23, 0x32, 0x46, 0xB0}
-	colTrack   = color.NRGBA{0x1D, 0x29, 0x38, 0xFF}
-	colDivider = color.NRGBA{0xFF, 0xFF, 0xFF, 0x0C}
+	colText  = color.NRGBA{0xF2, 0xF2, 0xF2, 0xFF} // onSurface
+	colSub   = color.NRGBA{0xCC, 0xCC, 0xCC, 0xFF} // onSurfaceSecondary
+	colMuted = color.NRGBA{0x8A, 0x8A, 0x8A, 0xFF} // 50% 白
 
-	colText    = color.NRGBA{0xE9, 0xEF, 0xF7, 0xFF}
-	colSub     = color.NRGBA{0x93, 0xA3, 0xB8, 0xFF}
-	colMuted   = color.NRGBA{0x64, 0x76, 0x8C, 0xFF}
-	colAccent  = color.NRGBA{0x2F, 0xD8, 0xC4, 0xFF}
-	colAccent2 = color.NRGBA{0x4C, 0x9B, 0xFF, 0xFF}
-	colViolet  = color.NRGBA{0xA7, 0x8B, 0xFA, 0xFF}
-	colAmber   = color.NRGBA{0xFF, 0xBC, 0x5C, 0xFF}
-	colRed     = color.NRGBA{0xFF, 0x6B, 0x7A, 0xFF}
+	colAccent  = color.NRGBA{0x27, 0x7A, 0xF7, 0xFF} // primary
+	colAccent2 = color.NRGBA{0x33, 0x8F, 0xE4, 0xFF} // primaryContainer
+	colAmber   = color.NRGBA{0xF5, 0x9E, 0x0B, 0xFF} // 注意
+	colRed     = color.NRGBA{0xF1, 0x25, 0x22, 0xFF} // error
 )
 
 func alpha(c color.NRGBA, a uint8) color.NRGBA {
@@ -31,33 +26,13 @@ func alpha(c color.NRGBA, a uint8) color.NRGBA {
 	return c
 }
 
-func lighten(c color.NRGBA, amount int) color.NRGBA {
-	clamp := func(v int) uint8 {
-		if v > 255 {
-			return 255
-		}
-		if v < 0 {
-			return 0
-		}
-		return uint8(v)
-	}
-	return color.NRGBA{clamp(int(c.R) + amount), clamp(int(c.G) + amount), clamp(int(c.B) + amount), c.A}
-}
-
 func healthColor(p float64) color.NRGBA {
 	switch {
-	case p >= 85:
+	case p >= 90:
 		return colRed
-	case p >= 65:
+	case p >= 80:
 		return colAmber
 	default:
 		return colAccent
 	}
-}
-
-func gradient(x0, y0, x1, y1 float64, from, to color.NRGBA) gg.Gradient {
-	g := gg.NewLinearGradient(x0, y0, x1, y1)
-	g.AddColorStop(0, from)
-	g.AddColorStop(1, to)
-	return g
 }
